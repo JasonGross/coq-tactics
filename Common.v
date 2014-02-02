@@ -94,6 +94,11 @@ Ltac rewrite_hyp := repeat rewrite_hyp'.
 Ltac rewrite_rev_hyp' := do_with_hyp ltac:(fun H => rewrite <- H).
 Ltac rewrite_rev_hyp := repeat rewrite_rev_hyp'.
 
+Ltac setoid_rewrite_hyp' := do_with_hyp ltac:(fun H => setoid_rewrite H).
+Ltac setoid_rewrite_hyp := repeat setoid_rewrite_hyp'.
+Ltac setoid_rewrite_rev_hyp' := do_with_hyp ltac:(fun H => setoid_rewrite <- H).
+Ltac setoid_rewrite_rev_hyp := repeat setoid_rewrite_rev_hyp'.
+
 Ltac apply_hyp' := do_with_hyp ltac:(fun H => apply H).
 Ltac apply_hyp := repeat apply_hyp'.
 Ltac eapply_hyp' := do_with_hyp ltac:(fun H => eapply H).
@@ -745,8 +750,20 @@ Ltac curry H := let HT := type of H in
     | ?H' => H
   end.
 
-Class can_transform A B := do_transform : B -> A.
+Class can_transform A B := do_transform : A -> B.
 
+Instance can_transform_sigma_base {A} {P : A -> Type}
+: can_transform (sigT P) (sigT P) | 0
+  := fun x => x.
+
+Instance can_transform_sigma {A B B' C'}
+         `{forall x : A, can_transform (B x) (@sigT (B' x) (C' x))}
+: can_transform (forall x : A, B x)
+                (@sigT (forall x, B' x) (fun b => forall x, C' x (b x))) | 0
+  := fun f => existT
+                (fun b => forall x : A, C' x (b x))
+                (fun x => projT1 (do_transform (f x)))
+                (fun x => projT2 (do_transform (f x))).
 
 (*
 Monomorphic Definition equal_f_dep
