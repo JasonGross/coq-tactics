@@ -247,6 +247,15 @@ Ltac destruct_eq_in_match :=
                                                             end
          end.
 
+(** [destruct] things in [if]s *)
+Ltac tac_if' tac := 
+  match goal with
+    | [ |- context[if ?a then _ else _] ] => tac a
+  end.
+Ltac tac_if tac := repeat tac_if' tac.
+Ltac case_eq_if' := tac_if' case_eq.
+Ltac case_eq_if := tac_if case_eq.
+
 (* Coq's build in tactics don't work so well with things like [iff]
    so split them up into multiple hypotheses *)
 Ltac split_in_context ident funl funr :=
