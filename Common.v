@@ -38,6 +38,14 @@ Ltac atomic x :=
     | _ => idtac
   end.
 
+(** [destruct] discriminees of [match]es, but only if they satisfy [tac] (e.g., [atomic] *)
+Ltac destruct_in_match_if' tac :=
+  match goal with
+    | [ |- appcontext[match ?D with _ => _ end] ] => tac D; destruct D
+  end.
+Ltac destruct_in_match_if tac := repeat destruct_in_match_if' tac.
+
+
 (* [pose proof defn], but only if no hypothesis of the same type exists.
    most useful for proofs of a proposition *)
 Tactic Notation "unique" "pose" "proof" constr(defn) :=
