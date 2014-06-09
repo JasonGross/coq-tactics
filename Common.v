@@ -266,22 +266,98 @@ Ltac case_eq_if := tac_if case_eq.
 
 (** Coq's built in tactics don't work so well with things like [iff]
     so split them up into multiple hypotheses *)
-Ltac split_in_context ident funl funr :=
+(** We do some hackery with typeclasses to get around the fact that
+    Coq 8.4 doesn't have tactics in terms; we want to say
+<<
+Ltac make_apply_under_binders_in lem H :=
+  let tac := make_apply_under_binders_in in
+  match type of H with
+    | forall x : ?T, @?P x
+      => let ret := constr:(fun x' : T =>
+                              let Hx := H x' in
+                              $(let ret' := tac lem Hx in
+                                exact ret')$) in
+         let ret' := (eval cbv zeta in ret) in
+         constr:(ret')
+    | _ => let ret := constr:($(let H' := fresh in
+                                pose H as H';
+                                apply lem in H';
+                                exact H')$) in
+           let ret' := (eval cbv beta zeta in ret) in
+           constr:(ret')
+  end.
+
+Ltac apply_under_binders_in lem H :=
+  let H' := make_apply_under_binders_in lem H in
+  let H'' := fresh in
+  pose proof H' as H'';
+    clear H;
+    rename H'' into H.
+>> *)
+
+Class make_apply_under_binders_in_helper {T} (lem : T) {T'} (H : T') {T''} := do_make_apply_under_binders_in_helper : T''.
+
+Class make_apply_under_binders_in_helper_helper {T} (H : T) {T'} (lem : T') {T''} := do_make_apply_under_binders_in_helper_helper : T''.
+
+Hint Extern 0 (make_apply_under_binders_in_helper_helper ?H ?lem)
+=> let H' := fresh in
+   pose H as H';
+     apply lem in H';
+     exact H'
+           : typeclass_instances.
+
+Ltac make_apply_under_binders_in lem H :=
+  match type of H with
+    | forall x : ?T, @?P x
+      => let ret := constr:(fun x' : T =>
+                              let Hx := H x' in
+                              _ : make_apply_under_binders_in_helper lem Hx) in
+         let ret' := (eval cbv zeta beta delta [do_make_apply_under_binders_in_helper make_apply_under_binders_in_helper] in ret) in
+         let retT := type of ret' in
+         let retT' := (eval cbv zeta beta delta [do_make_apply_under_binders_in_helper make_apply_under_binders_in_helper] in retT) in
+         constr:(ret' : retT')
+    | _ => let ret := constr:(_ : make_apply_under_binders_in_helper_helper H lem) in
+           let ret' := (eval cbv beta zeta delta [make_apply_under_binders_in_helper_helper do_make_apply_under_binders_in_helper_helper] in ret) in
+           let retT := type of ret' in
+           let retT' := (eval cbv beta zeta delta [make_apply_under_binders_in_helper_helper do_make_apply_under_binders_in_helper_helper] in retT) in
+           constr:(ret' : retT')
+  end.
+
+Hint Extern 0 (make_apply_under_binders_in_helper ?lem ?H) =>
+let ret := make_apply_under_binders_in lem H
+in exact ret
+   : typeclass_instances.
+
+Ltac apply_under_binders_in lem H :=
+  let H' := make_apply_under_binders_in lem H in
+  let H'' := fresh in
+  pose proof H' as H'';
+    clear H;
+    rename H'' into H.
+
+Ltac split_in_context ident proj1 proj2 :=
   repeat match goal with
-           | [ H : context p [ident] |- _ ] =>
-             let H0 := context p[funl] in let H0' := eval simpl in H0 in assert H0' by (apply H);
-             let H1 := context p[funr] in let H1' := eval simpl in H1 in assert H1' by (apply H);
-             clear H
+           | [ H : context[ident] |- _ ] =>
+             let H0 := make_apply_under_binders_in proj1 H in
+             let H1 := make_apply_under_binders_in proj2 H in
+             pose proof H0;
+               pose proof H1;
+               clear H
          end.
 
-Ltac split_iff := split_in_context iff (fun a b : Prop => a -> b) (fun a b : Prop => b -> a).
+Ltac split_iff := split_in_context iff @fst @snd.
+Ltac split_and := split_in_context and @fst @snd.
 
-Ltac split_and' :=
-  repeat match goal with
-           | [ H : ?a /\ ?b |- _ ] => let H0 := fresh in let H1 := fresh in
-             assert (H0 := fst H); assert (H1 := snd H); clear H
-         end.
-Ltac split_and := split_and'; split_in_context and (fun a b : Type => a) (fun a b : Type => b).
+(** Test case for [split_and]. *)
+Goal (forall x y, x /\ y) -> True.
+Proof.
+  intro.
+  split_and.
+  lazymatch goal with
+  | [ H0 : forall x : Type, Type -> x, H1 : Type -> forall x : Type, x |- True ] => idtac
+  end.
+  exact I.
+Qed.
 
 Ltac clear_hyp_of_type type :=
   repeat match goal with
