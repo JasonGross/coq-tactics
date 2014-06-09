@@ -264,8 +264,8 @@ Ltac tac_if tac := repeat tac_if' tac.
 Ltac case_eq_if' := tac_if' case_eq.
 Ltac case_eq_if := tac_if case_eq.
 
-(* Coq's build in tactics don't work so well with things like [iff]
-   so split them up into multiple hypotheses *)
+(** Coq's built in tactics don't work so well with things like [iff]
+    so split them up into multiple hypotheses *)
 Ltac split_in_context ident funl funr :=
   repeat match goal with
            | [ H : context p [ident] |- _ ] =>
