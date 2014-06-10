@@ -112,6 +112,24 @@ Ltac apply_hyp := repeat apply_hyp'.
 Ltac eapply_hyp' := do_with_hyp ltac:(fun H => eapply H).
 Ltac eapply_hyp := repeat eapply_hyp'.
 
+
+(** Do something with every hypothesis. *)
+Ltac do_with_hyp' tac :=
+  match goal with
+    | [ H : _ |- _ ] => tac H
+  end.
+
+(** Rewrite with any applicable hypothesis. *)
+Tactic Notation "rewrite" "*" := do_with_hyp' ltac:(fun H => rewrite H).
+Tactic Notation "rewrite" "->" "*" := do_with_hyp' ltac:(fun H => rewrite -> H).
+Tactic Notation "rewrite" "<-" "*" := do_with_hyp' ltac:(fun H => rewrite <- H).
+Tactic Notation "rewrite" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite !H).
+Tactic Notation "rewrite" "->" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite -> !H).
+Tactic Notation "rewrite" "<-" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite <- !H).
+Tactic Notation "rewrite" "!*" := progress rewrite ?*.
+Tactic Notation "rewrite" "->" "!*" := progress rewrite -> ?*.
+Tactic Notation "rewrite" "<-" "!*" := progress rewrite <- ?*.
+
 (** solve simple setiod goals that can be solved by [transitivity] *)
 Ltac simpl_transitivity :=
   try solve [ match goal with
