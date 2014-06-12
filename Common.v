@@ -23,19 +23,22 @@ End sig.
 
 (** Test if a tactic succeeds, but always roll-back the results *)
 Tactic Notation (at level 3) "test" tactic(tac) :=
-  try ((tac || fail 1 tac "does not succeed"); fail tac "succeeds"; [](* test for [t] solved all goals *)).
+  try (first [ tac | fail 1 tac "does not succeed" ]; fail tac "succeeds"; [](* test for [t] solved all goals *)).
 
 (** [not tac] is equivalent to [fail tac "succeeds"] if [tac] succeeds, and is equivalent to [idtac] if [tac] fails *)
 Tactic Notation (at level 3) "not" tactic(tac) := try ((test tac); fail 1 tac "succeeds").
 
 (** fail if [x] is a function application, a dependent product ([fun _
-    => _]), or a sigma type ([forall _, _]) *)
+    => _]), or a pi type ([forall _, _]), or a fixpoint *)
 Ltac atomic x :=
   match x with
+    | _ => is_evar x; fail 1 x "is not atomic (evar)"
     | ?f _ => fail 1 x "is not atomic (application)"
     | (fun _ => _) => fail 1 x "is not atomic (fun)"
     | forall _, _ => fail 1 x "is not atomic (forall)"
+    | let x := _ in _ => fail 1 x "is not atomic (let in)"
     | _ => is_fix x; fail 1 x "is not atomic (fix)"
+    | context[?E] => (* catch-all *) (not constr_eq E x); fail 1 x "is not atomic (has subterm" E ")"
     | _ => idtac
   end.
 
