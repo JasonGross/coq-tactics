@@ -37,6 +37,7 @@ Ltac atomic x :=
     | (fun _ => _) => fail 1 x "is not atomic (fun)"
     | forall _, _ => fail 1 x "is not atomic (forall)"
     | let x := _ in _ => fail 1 x "is not atomic (let in)"
+    | match _ with _ => _ end => fail 1 x "is not atomic (match)"
     | _ => is_fix x; fail 1 x "is not atomic (fix)"
     | context[?E] => (* catch-all *) (not constr_eq E x); fail 1 x "is not atomic (has subterm" E ")"
     | _ => idtac
