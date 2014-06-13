@@ -240,6 +240,9 @@ Ltac specialize_all_ways :=
            | [ x : ?T, H : _ |- _ ] => unique pose proof (H x)
          end.
 
+(** Fail if there is more than one goal left. *)
+Ltac at_most_one_goal_left := idtac; [].
+
 (** try to do [tac] after [repeat rewrite] on [rew_H], in both directions *)
 Ltac try_rewrite rew_H tac :=
   (rewrite ?rew_H; tac) ||
