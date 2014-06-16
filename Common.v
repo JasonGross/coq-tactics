@@ -31,6 +31,7 @@ Tactic Notation (at level 3) "not" tactic(tac) := try ((test tac); fail 1 tac "s
 (** fail if [x] is a function application, a dependent product ([fun _
     => _]), or a pi type ([forall _, _]), or a fixpoint *)
 Ltac atomic x :=
+  idtac;
   match x with
     | _ => is_evar x; fail 1 x "is not atomic (evar)"
     | ?f _ => fail 1 x "is not atomic (application)"
