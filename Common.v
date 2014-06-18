@@ -22,11 +22,11 @@ Section sig.
 End sig.
 
 (** Test if a tactic succeeds, but always roll-back the results *)
-Tactic Notation (at level 3) "test" tactic(tac) :=
+Tactic Notation "test" tactic3(tac) :=
   try (first [ tac | fail 2 tac "does not succeed" ]; fail tac "succeeds"; [](* test for [t] solved all goals *)).
 
 (** [not tac] is equivalent to [fail tac "succeeds"] if [tac] succeeds, and is equivalent to [idtac] if [tac] fails *)
-Tactic Notation (at level 3) "not" tactic(tac) := try ((test tac); fail 1 tac "succeeds").
+Tactic Notation "not" tactic3(tac) := try ((test tac); fail 1 tac "succeeds").
 
 (** fail if [x] is a function application, a dependent product ([fun _
     => _]), or a pi type ([forall _, _]), or a fixpoint *)
