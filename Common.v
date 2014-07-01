@@ -240,6 +240,23 @@ Ltac specialize_all_ways :=
   repeat match goal with
            | [ x : ?T, H : _ |- _ ] => unique pose proof (H x)
          end.
+         
+(** specialize [H] with any hypothesis that is the unique one of its type. *)
+Ltac specialize_hyp_uniquely H :=
+  match goal with
+    | [ x : ?T, y : ?T' |- _ ] => pose proof (H x); pose proof (H y); fail 1 H "can be specialized by duplicate variables" x "and" y
+    | _ => idtac
+  end;
+  let H' := fresh in
+  match goal with
+    | [ x : ?T |- _ ] => pose proof (H x) as H'
+  end;
+    clear H;
+    rename H' into H.
+
+(** specialize all hypotheses with any uniquely typed variables *)
+Ltac specialize_all_uniquely := do_with_hyp specialize_hyp_uniquely.
+
 
 (** try to do [tac] after [repeat rewrite] on [rew_H], in both directions *)
 Ltac try_rewrite rew_H tac :=
