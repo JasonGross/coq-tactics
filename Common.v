@@ -136,6 +136,12 @@ Tactic Notation "rewrite" "!*" := progress rewrite ?*.
 Tactic Notation "rewrite" "->" "!*" := progress rewrite -> ?*.
 Tactic Notation "rewrite" "<-" "!*" := progress rewrite <- ?*.
 
+(** Run [subst], running [hnf] on any hypothesis that allows [subst]
+    to make more progress. *)
+Ltac hnf_subst :=
+  repeat first [ progress subst
+               | do_with_hyp' ltac:(fun H => hnf in H; progress subst) ].
+
 (** solve simple setiod goals that can be solved by [transitivity] *)
 Ltac simpl_transitivity :=
   try solve [ match goal with
