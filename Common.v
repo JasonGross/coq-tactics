@@ -258,6 +258,30 @@ Ltac specialize_hyp_uniquely H :=
 Ltac specialize_all_uniquely := do_with_hyp specialize_hyp_uniquely.
 
 
+(** Run [hnf] in anything inside of a [match] statement *)
+Ltac hnf_in_match' :=
+  idtac;
+  try match goal with
+        | [ |- appcontext[match ?E with _ => _ end] ]
+          => let E' := (eval hnf in E) in
+             progress change E with E'
+      end.
+Ltac hnf_in_match_in' H :=
+  idtac;
+  try match type_of H with
+        | appcontext[match ?E with _ => _ end]
+          => let E' := (eval hnf in E) in
+             progress change E with E' in H
+      end.
+
+Tactic Notation "hnf_in_match" := do ?progress hnf_in_match'.
+Tactic Notation "hnf_in_match" "in" hyp(H) := do ?progress hnf_in_match_in' H.
+Tactic Notation "hnf_in_match" "in" "*" := hnf_in_match; do ?do_with_hyp' ltac:(fun H => progress hnf_in_match in H).
+Tactic Notation "hnf_in_match" "in" "*" "|-" := do ?do_with_hyp' ltac:(fun H => progress hnf_in_match in H).
+Tactic Notation "hnf_in_match" "in" "*" "|-" "*" := hnf_in_match in *.
+Tactic Notation "hnf_in_match" "in" hyp(H) "|-" "*" := hnf_in_match; hnf_in_match in H.
+
+
 (** try to do [tac] after [repeat rewrite] on [rew_H], in both directions *)
 Ltac try_rewrite rew_H tac :=
   (rewrite ?rew_H; tac) ||
