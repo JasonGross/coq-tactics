@@ -1941,3 +1941,38 @@ Proof.
   rewrite <- path_universe_V.
   reflexivity.
 Defined.*)
+
+Local Open Scope list_scope.
+(** Takes two lists, and recursively iterates down their structure, unifying forced evars *)
+Ltac structurally_unify_lists l1 l2 :=
+  first [ constr_eq l1 l2
+        | is_evar l1; unify l1 l2
+        | is_evar l2; unify l2 l1
+        | lazymatch l1 with
+            | nil => match l2 with
+                       | ?a ++ ?b => structurally_unify_lists l1 a; structurally_unify_lists l1 b
+                       | _ => idtac
+                     end
+            | ((?a ++ ?b) ++ ?c) => structurally_unify_lists (a ++ (b ++ c)) l2
+            | nil ++ ?a => structurally_unify_lists a l2
+            | ?a ++ nil => structurally_unify_lists a l2
+          end
+        | lazymatch l2 with
+            | nil => match l1 with
+                       | ?a ++ ?b => structurally_unify_lists a l2; structurally_unify_lists b l2
+                       | _ => idtac
+                     end
+            | ((?a ++ ?b) ++ ?c) => structurally_unify_lists l1 (a ++ (b ++ c))
+            | nil ++ ?a => structurally_unify_lists l1 a
+            | ?a ++ nil => structurally_unify_lists l1 a
+          end
+        | let l1l2 := constr:((l1, l2)) in
+          match l1l2 with
+            | (?a ++ ?b, ?a ++ ?b') => structurally_unify_lists b b'
+            | (?a ++ ?b, ?a' ++ ?b) => structurally_unify_lists a a'
+            | (?a ++ ?b, ?a) => let T := type_of b in structurally_unify_lists b (nil : T)
+            | (?a ++ ?b, ?b) => let T := type_of a in structurally_unify_lists a (nil : T)
+            | (?a, ?a ++ ?b) => let T := type_of b in structurally_unify_lists (nil : T) b
+            | (?b, ?a ++ ?b) => let T := type_of a in structurally_unify_lists (nil : T) a
+          end
+        | idtac ].
