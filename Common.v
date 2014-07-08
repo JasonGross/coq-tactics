@@ -514,6 +514,42 @@ Ltac subst_body :=
   repeat match goal with
            | [ H := _ |- _ ] => subst H
          end.
+         
+(** Destruct hypotheses that can be destructed without loosing
+    information, such as [and] and [sig]. *)
+Ltac destruct_safe_hyps' :=
+  first [ progress destruct_head_hnf ex
+        | progress destruct_head_hnf and
+        | progress destruct_head_hnf prod
+        | progress destruct_head_hnf sig
+        | progress destruct_head_hnf sig2
+        | progress destruct_head_hnf sigT
+        | progress destruct_head_hnf sigT2
+        | progress hnf_subst ].
+
+Ltac destruct_safe_hyps := repeat destruct_safe_hyps'.
+
+(** Split goals that can be split without loosing
+    information, such as [and] and [prod]. *)
+Ltac split_safe_goals' :=
+  hnf;
+  match goal with
+    | [ |- and _ _ ] => split
+    | [ |- prod _ _ ] => split
+  end.
+
+Ltac split_safe_goals := repeat split_safe_goals'.
+
+(** Run [reflexivity], but only if the goal has no evars or one or the other argument is an evar. *)
+Ltac evar_safe_reflexivity :=
+  idtac;
+  let R := match goal with |- ?R ?a ?b => constr:(R) end in
+  let a := match goal with |- ?R ?a ?b => constr:(a) end in
+  let b := match goal with |- ?R ?a ?b => constr:(b) end in
+  first [ not goal_has_evar
+        | not has_evar a; is_evar b; unify a b
+        | not has_evar b; is_evar a; unify a b ];
+    reflexivity.
 
 (** Copying from HoTT *)
 (** The fact that [r] is a left inverse of [s]. As a mnemonic, note that the partially applied type [Sect s] is the type of proofs
