@@ -84,6 +84,13 @@ Ltac head expr :=
 
 Ltac head_hnf expr := let expr' := eval hnf in expr in head expr'.
 
+(** Fail if the goal has an evar *)
+Ltac goal_has_evar :=
+  idtac;
+  match goal with
+    | [ |- ?G ] => first [ has_evar G | fail 2 "Goal has no evars" ]
+  end.
+
 (** call [tac H], but first [simpl]ify [H].
     This tactic leaves behind the simplified hypothesis. *)
 Ltac simpl_do tac H :=
