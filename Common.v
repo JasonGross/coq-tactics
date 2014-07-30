@@ -44,11 +44,20 @@ Ltac atomic x :=
     | _ => idtac
   end.
 
-(** [destruct] discriminees of [match]es, but only if they satisfy [tac] (e.g., [atomic] *)
-Ltac destruct_in_match_if' tac :=
+(** Run [tac] on the discriminee of a match *)
+Ltac do_with_match_discriminee' tac :=
   match goal with
-    | [ |- appcontext[match ?D with _ => _ end] ] => tac D; destruct D
+    | [ |- appcontext[match ?E with _ => _ end] ] => tac E
   end.
+
+(** Run [tac] on a hypothesis and the the discriminee of a match in that hypothesis *)
+Ltac hyp_do_with_match_discriminee' tac :=
+  match goal with
+    | [ H : appcontext[match ?E with _ => _ end] |- _ ] => tac H E
+  end.
+
+(** [destruct] discriminees of [match]es, but only if they satisfy [tac] (e.g., [atomic] *)
+Ltac destruct_in_match_if' tac := do_with_match_discriminee' ltac:(fun E => tac E; destruct E).
 Ltac destruct_in_match_if tac := repeat destruct_in_match_if' tac.
 
 
