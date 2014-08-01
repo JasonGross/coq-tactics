@@ -93,6 +93,9 @@ Ltac head expr :=
 
 Ltac head_hnf expr := let expr' := eval hnf in expr in head expr'.
 
+(** Unfolds the head of [expr] *)
+Ltac unfold_head expr := let h := head expr in eval unfold h in expr.
+
 (** Fail if the goal has an evar *)
 Ltac goal_has_evar :=
   idtac;
