@@ -2233,3 +2233,8 @@ Definition match_bool_comm_2_const (b : bool) A B R (F : A -> B -> R) t1 f1 t2 f
   := @match_bool_comm_2 b _ _ _ F t1 f1 t2 f2.
 Lemma match_bool_const (b : bool) A x : (if b return A then x else x) = x.
 Proof. destruct b; reflexivity. Defined.
+
+(** [open_unify x y] is like [unify x y], but doesn't require that the
+    terms by fully typed before running unification *)
+Tactic Notation "open_unify" open_constr(term1) open_constr(term2) :=
+  unify term1 term2.
