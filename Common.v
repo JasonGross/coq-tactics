@@ -28,8 +28,7 @@ Tactic Notation "test" tactic3(tac) :=
 (** [not tac] is equivalent to [fail tac "succeeds"] if [tac] succeeds, and is equivalent to [idtac] if [tac] fails *)
 Tactic Notation "not" tactic3(tac) := try ((test tac); fail 1 tac "succeeds").
 
-(** fail if [x] is a function application, a dependent product ([fun _
-    => _]), or a pi type ([forall _, _]), or a fixpoint *)
+(** [atomic x] is the same as [idtac] if [x] is a variable or hypothesis, but is [fail 0] if [x] has internal structure. *)
 Ltac atomic x :=
   idtac;
   match x with
