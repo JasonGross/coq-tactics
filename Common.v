@@ -520,6 +520,16 @@ Ltac subst_rel rel :=
   match goal with
     | [ H : rel ?a ?b |- _ ] => (atomic a; subst_by_rewrite_hyp a H) || (atomic b; subst_by_rewrite_rev_hyp b H)
   end.
+  
+Ltac set_evars :=
+  repeat match goal with
+           | [ |- appcontext[?E] ] => is_evar E; let H := fresh in set (H := E)
+         end.
+
+Ltac subst_evars :=
+  repeat match goal with
+           | [ H := ?E |- _ ] => is_evar E; subst E
+         end.
 
 Ltac subst_body :=
   repeat match goal with
