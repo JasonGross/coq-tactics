@@ -528,7 +528,7 @@ Ltac set_evars :=
 
 Ltac subst_evars :=
   repeat match goal with
-           | [ H := ?E |- _ ] => is_evar E; subst E
+           | [ H := ?E |- _ ] => is_evar E; subst H
          end.
 
 Ltac subst_body :=
