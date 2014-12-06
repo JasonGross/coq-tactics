@@ -65,14 +65,14 @@ Ltac destruct_in_match_if tac := repeat destruct_in_match_if' tac.
 Tactic Notation "unique" "pose" "proof" constr(defn) :=
   let T := type of defn in
   match goal with
-    | [ H : T |- _ ] => fail 1
+    | [ H : T |- _ ] => fail 1 "Hypothesis" H "already has type" T
     | _ => pose proof defn
   end.
 
 (** [pose defn], but only if that hypothesis doesn't exist *)
 Tactic Notation "unique" "pose" constr(defn) :=
   match goal with
-    | [ H := defn |- _ ] => fail 1
+    | [ H := defn |- _ ] => fail 1 "Hypothesis" H "already has body" defn
     | _ => pose defn
   end.
 
