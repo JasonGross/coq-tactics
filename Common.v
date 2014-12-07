@@ -176,7 +176,7 @@ Ltac destruct_all_matches_then matcher tac :=
   repeat match goal with
            | [ H : ?T |- _ ]
              => (* handle section variables, which don't disappear on destruct *)
-             generalize dependent H; clear H; intros []; intros; tac
+             matcher T; generalize dependent H; clear H; intros []; intros; tac
            | [ H : ?T |- _ ] => matcher T; destruct H; tac
          end.
 
