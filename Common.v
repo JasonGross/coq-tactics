@@ -2250,3 +2250,12 @@ Proof. destruct b; reflexivity. Defined.
     terms by fully typed before running unification *)
 Tactic Notation "open_unify" open_constr(term1) open_constr(term2) :=
   unify term1 term2.
+
+
+(** Tactic to not catch failures from two branches, from Jonathan Leivent at https://coq.inria.fr/bugs/show_bug.cgi?id=3474#c4 *)
+Tactic Notation
+  "if" tactic3(cond) "then" tactic3(tpart) "else" tactic3(epart) :=
+  let R := fresh in
+  first [test cond; set (R:=true) | set (R:=false)];
+  let x := eval cbv delta in R in
+  clear R; lazymatch x with true => tpart | false => epart end.
