@@ -75,6 +75,21 @@ Tactic Notation "unique" "pose" constr(defn) :=
     | [ H := defn |- _ ] => fail 1 "Hypothesis" H "already has body" defn
     | _ => pose defn
   end.
+  
+(** like [unique pose proof], but first [simpl] *)
+Tactic Notation "unique" "simpl" "pose" "proof" constr(defn) :=
+  let T0 := type of defn in
+  let T := (eval simpl in T0) in
+  simpl in *;
+    unique pose proof (defn : T).
+
+Tactic Notation "unique" "simpl" "pose" constr(defn) :=
+  let T0 := type of defn in
+  let T := (eval simpl in T0) in
+  let defn' := (eval simpl in defn) in
+  simpl in *;
+    unique pose (defn' : T).
+
 
 (** check's if the given hypothesis has a body, i.e., if [clearbody]
     could ever succeed.  We can't just do [test_tac (clearbody H)],
