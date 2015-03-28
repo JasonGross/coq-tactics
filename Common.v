@@ -2274,3 +2274,40 @@ Tactic Notation
   first [test cond; set (R:=true) | set (R:=false)];
   let x := eval cbv delta in R in
   clear R; lazymatch x with true => tpart | false => epart end.
+
+Ltac free_in x y :=
+  idtac;
+  match y with
+    | appcontext[x] => fail 1 x "appears in" y
+    | _ => idtac
+  end.
+
+Ltac setoid_subst' x :=
+  atomic x;
+  match goal with
+    | [ H : ?R x ?y |- _ ]
+      => free_in x y;
+        rewrite ?H;
+        repeat match goal with
+                 | [ H' : appcontext[x] |- _ ] => rewrite H in H'
+               end;
+        clear H;
+        clear x
+    | [ H : ?R ?y x |- _ ]
+      => free_in x y;
+        rewrite <- ?H;
+        repeat match goal with
+                 | [ H' : appcontext[x] |- _ ] => rewrite <- H in H'
+               end;
+        clear H;
+        clear x
+  end.
+
+Ltac setoid_subst_all :=
+  repeat match goal with
+           | [ H : ?R ?x ?y |- _ ] => atomic x; setoid_subst' x
+           | [ H : ?R ?x ?y |- _ ] => atomic y; setoid_subst' y
+         end.
+
+Tactic Notation "setoid_subst" ident(x) := setoid_subst' x.
+Tactic Notation "setoid_subst" := setoid_subst_all.
