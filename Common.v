@@ -159,15 +159,15 @@ Ltac do_with_hyp' tac :=
   end.
 
 (** Rewrite with any applicable hypothesis. *)
-Tactic Notation "rewrite" "*" := do_with_hyp' ltac:(fun H => rewrite H).
-Tactic Notation "rewrite" "->" "*" := do_with_hyp' ltac:(fun H => rewrite -> H).
-Tactic Notation "rewrite" "<-" "*" := do_with_hyp' ltac:(fun H => rewrite <- H).
-Tactic Notation "rewrite" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite !H).
-Tactic Notation "rewrite" "->" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite -> !H).
-Tactic Notation "rewrite" "<-" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite <- !H).
-Tactic Notation "rewrite" "!*" := progress rewrite ?*.
-Tactic Notation "rewrite" "->" "!*" := progress rewrite -> ?*.
-Tactic Notation "rewrite" "<-" "!*" := progress rewrite <- ?*.
+Tactic Notation "rewrite_hyp" "*" := do_with_hyp' ltac:(fun H => rewrite H).
+Tactic Notation "rewrite_hyp" "->" "*" := do_with_hyp' ltac:(fun H => rewrite -> H).
+Tactic Notation "rewrite_hyp" "<-" "*" := do_with_hyp' ltac:(fun H => rewrite <- H).
+Tactic Notation "rewrite_hyp" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite !H).
+Tactic Notation "rewrite_hyp" "->" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite -> !H).
+Tactic Notation "rewrite_hyp" "<-" "?*" := repeat do_with_hyp' ltac:(fun H => rewrite <- !H).
+Tactic Notation "rewrite_hyp" "!*" := progress rewrite_hyp ?*.
+Tactic Notation "rewrite_hyp" "->" "!*" := progress rewrite_hyp -> ?*.
+Tactic Notation "rewrite_hyp" "<-" "!*" := progress rewrite_hyp <- ?*.
 
 (** Run [subst], running [hnf] on any hypothesis that allows [subst]
     to make more progress. *)
@@ -2337,3 +2337,64 @@ Ltac setoid_subst_all :=
 
 Tactic Notation "setoid_subst" ident(x) := setoid_subst' x.
 Tactic Notation "setoid_subst" := setoid_subst_all.
+
+(** destruct discriminees of [match]es in the goal *)
+(* Prioritize breaking apart things in the context, then things which
+   don't need equations, then simple matches (which can be displayed
+   as [if]s), and finally matches in general. *)
+Ltac break_match_step only_when :=
+  match goal with
+  | [ |- appcontext[match ?e with _ => _ end] ]
+    => only_when e; is_var e; destruct e
+  | [ |- appcontext[match ?e with _ => _ end] ]
+    => only_when e;
+       match type of e with
+       | sumbool _ _ => destruct e
+       end
+  | [ |- appcontext[if ?e then _ else _] ]
+    => only_when e; destruct e eqn:?
+  | [ |- appcontext[match ?e with _ => _ end] ]
+    => only_when e; destruct e eqn:?
+  end.
+Ltac break_match_hyps_step only_when :=
+  match goal with
+  | [ H : appcontext[match ?e with _ => _ end] |- _ ]
+    => only_when e; is_var e; destruct e
+  | [ H : appcontext[match ?e with _ => _ end] |- _ ]
+    => only_when e;
+       match type of e with
+       | sumbool _ _ => destruct e
+       end
+  | [ H : appcontext[if ?e then _ else _] |- _ ]
+    => only_when e; destruct e eqn:?
+  | [ H : appcontext[match ?e with _ => _ end] |- _ ]
+    => only_when e; destruct e eqn:?
+  end.
+Ltac break_match := repeat break_match_step ltac:(fun _ => idtac).
+Ltac break_match_hyps := repeat break_match_hyps_step ltac:(fun _ => idtac).
+Ltac break_match_when_head_step T :=
+  break_match_step
+    ltac:(fun e => let T' := type of e in
+                   let T' := head T' in
+                   constr_eq T T').
+Ltac break_match_hyps_when_head_step T :=
+  break_match_hyps_step
+    ltac:(fun e => let T' := type of e in
+                   let T' := head T' in
+                   constr_eq T T').
+Ltac break_match_when_head T := repeat break_match_when_head_step T.
+Ltac break_match_hyps_when_head T := repeat break_match_hyps_when_head_step T.
+
+Ltac destruct_trivial_step :=
+  match goal with
+  | [ H : unit |- _ ] => clear H || destruct H
+  | [ H : True |- _ ] => clear H || destruct H
+  end.
+Ltac destruct_trivial := repeat destruct_trivial_step.
+
+Ltac clear_duplicates_step :=
+  match goal with
+  | [ H : ?T, H' : ?T |- _ ] => clear H'
+  | [ H := ?T, H' := ?T |- _ ] => clear H'
+  end.
+Ltac clear_duplicates := repeat clear_duplicates_step.
